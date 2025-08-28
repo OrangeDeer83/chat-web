@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Chat Room{% endblock %}
+
+{% block content %}
+    <div id="chat-window">
+        <div id="user-list">
+            <h3>Users</h3>
+            <!-- User list will be populated by JS -->
+        </div>
+        <div id="message-container">
+            <div id="messages">
+                <!-- Messages will be populated by JS -->
+            </div>
+            <div id="message-input">
+                <select id="recipient-select"></select>
+                <input type="text" id="my-message" placeholder="Type a message...">
+                <button id="send-button">Send</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const socket = io();
+
+            const messageInput = document.getElementById('my-message');
+            const sendButton = document.getElementById('send-button');
+            const messagesDiv = document.getElementById('messages');
+            const recipientSelect = document.getElementById('recipient-select');
+            const userListDiv = document.getElementById('user-list');
+
+            let currentUserId = {{ current_user.id }};
+
+            socket.on('connect', () => {
+                console.log('Connected to server!');
+            });
+
+            socket.on('user_list', (users) => {
+                userListDiv.innerHTML = '<h3>Users</h3>';
+                recipientSelect.innerHTML = '';
+                users.forEach(user => {
+                    if (user.id !== currentUserId) {
+                        const userElement = document.createElement('div');
+                        userElement.innerText = user.username;
+                        userListDiv.appendChild(userElement);
+
+                        const optionElement = document.createElement('option');
+                        optionElement.value = user.id;
+                        optionElement.innerText = user.username;
+                        recipientSelect.appendChild(optionElement);
+                    }
+                });
+            });
+
+            socket.on('message', (data) => {
+                const msgDiv = document.createElement('div');
+                msgDiv.textContent = `${data.sender}: ${data.msg}`;
+                messagesDiv.appendChild(msgDiv);
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+            
+            socket.on('load_messages', (data) => {
+                messagesDiv.innerHTML = '';
+                data.messages.forEach(msg => {
+                    const msgDiv = document.createElement('div');
+                    msgDiv.textContent = `${msg.sender}: ${msg.content}`;
+                    messagesDiv.appendChild(msgDiv);
+                });
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+
+            sendButton.addEventListener('click', () => {
+                if (messageInput.value && recipientSelect.value) {
+                    socket.emit('send_message', {
+                        'recipient_id': recipientSelect.value,
+                        'message': messageInput.value
+                    });
+                    messageInput.value = '';
+                }
+            });
+
+            messageInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    sendButton.click();
+                }
+            });
+
+            recipientSelect.addEventListener('change', () => {
+                const recipientId = recipientSelect.value;
+                socket.emit('load_history', { 'recipient_id': recipientId });
+            });
+
+        });
+    </script>
+{% endblock %}
