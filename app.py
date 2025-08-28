@@ -14,7 +14,7 @@ from flask_socketio import SocketIO, send, emit
 # App Configuration
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///chat.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance/chat.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Extensions Initialization
@@ -161,4 +161,6 @@ def handle_load_history(data):
     emit('load_messages', {'messages': messages_data})
 
 if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
     socketio.run(app, debug=True)
