@@ -167,4 +167,5 @@ def handle_load_history(data):
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    socketio.run(app, debug=True)
+    port = int(os.environ.get("PORT", 5000))  # 預設用 5000，Render 會注入 PORT
+    app.run(host="0.0.0.0", port=port)
