@@ -11,6 +11,10 @@ from wtforms.validators import DataRequired, Length, EqualTo
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_socketio import SocketIO, send, emit
 
+if not os.path.exists("./instance"):
+    # 建立資料夾
+    os.makedirs("./instance")
+
 # App Configuration
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'a_very_secret_key')
